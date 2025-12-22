@@ -111,3 +111,69 @@ summary(samples)
 ############################################################
 # End BBWM script
 ############################################################
+
+### Run BBWM with MCMC
+
+library(rjags)
+library(coda)
+
+# Load BBWM input data
+data_list <- readRDS("data/bbwm_input_list.rds")
+
+# Load JAGS model
+model_file <- "code/bbwm_model.jags"
+
+# Initialize model
+jags_model <- jags.model(
+  file = model_file,
+  data = data_list,
+  n.chains = 3,
+  n.adapt = 2000
+)
+
+# Burn-in
+update(jags_model, n.iter = 5000)
+
+# Sample posterior
+samples <- coda.samples(
+  model = jags_model,
+  variable.names = c("w_agg", "alpha"),
+  n.iter = 15000,
+  thin = 5
+)
+
+saveRDS(samples, "output/bbwm_posterior_samples.rds")
+
+############################################################
+convergence_diagnostics.R
+
+library(coda)
+library(ggplot2)
+
+samples <- readRDS("output/bbwm_posterior_samples.rds")
+
+# 1. Trace plots (representative parameters)
+png("figures/traceplots_bbwm.png", width = 900, height = 600)
+traceplot(samples[, c("w_agg[1]", "w_agg[2]")])
+dev.off()
+
+# 2. Gelman-Rubin diagnostics
+rhat <- gelman.diag(samples, autoburnin = FALSE)
+print(rhat)
+
+# 3. Effective sample sizes
+ess <- effectiveSize(samples)
+print(summary(ess))
+
+# Optional: ESS barplot
+ess_df <- data.frame(
+  parameter = names(ess),
+  ESS = as.numeric(ess)
+)
+
+ggplot(ess_df, aes(x = parameter, y = ESS)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Effective Sample Sizes for BBWM Parameters")
+
