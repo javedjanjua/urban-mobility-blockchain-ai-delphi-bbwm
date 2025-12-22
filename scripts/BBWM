@@ -1,0 +1,113 @@
+############################################################
+# Bayesian Best–Worst Method (BBWM)
+# Hierarchical Multinomial–Dirichlet Model
+############################################################
+
+library(rjags)
+library(coda)
+
+############################################################
+# 1. Load BBWM data structure
+############################################################
+
+# Expected columns:
+# Expert_ID, Challenge, Best_Property, Worst_Property,
+# Comparison_Type, Reference_Property, Compared_Property, Saaty_Score
+
+bbwm_data <- read.csv("BBWM_input_structure.csv")
+
+############################################################
+# 2. Prepare data for JAGS
+############################################################
+
+K <- length(unique(bbwm_data$Compared_Property))
+N <- length(unique(bbwm_data$Expert_ID))
+
+# Placeholder count matrices
+A_B <- matrix(1, nrow = N, ncol = K)  # Best → Others
+A_W <- matrix(1, nrow = N, ncol = K)  # Others → Worst
+
+m_b <- rowSums(A_B)
+m_w <- rowSums(A_W)
+
+############################################################
+# 3. JAGS model specification
+############################################################
+
+bbwm_model <- "
+model {
+
+  # Group-level prior
+  w_agg[1:K] ~ ddirch(alpha0[1:K])
+
+  # Hyperprior for consensus
+  alpha ~ dgamma(1, 0.1)
+
+  for (n in 1:N) {
+
+    # Individual expert weights
+    w[n,1:K] ~ ddirch(alpha * w_agg[])
+
+    # Others → Worst likelihood
+    A_W[n,1:K] ~ dmulti(w[n,], m_w[n])
+
+    # Best → Others probabilities (inverse weights)
+    for (k in 1:K) {
+      inv_w[n,k] <- 1 / w[n,k]
+    }
+    for (k in 1:K) {
+      pi_b[n,k] <- inv_w[n,k] / sum(inv_w[n,])
+    }
+
+    A_B[n,1:K] ~ dmulti(pi_b[n,], m_b[n])
+  }
+}
+"
+
+############################################################
+# 4. Run MCMC
+############################################################
+
+data_jags <- list(
+  A_B = A_B,
+  A_W = A_W,
+  m_b = m_b,
+  m_w = m_w,
+  N = N,
+  K = K,
+  alpha0 = rep(1, K)
+)
+
+params <- c("w_agg", "alpha")
+
+model <- jags.model(
+  textConnection(bbwm_model),
+  data = data_jags,
+  n.chains = 3
+)
+
+update(model, 5000)  # burn-in
+
+samples <- coda.samples(
+  model,
+  variable.names = params,
+  n.iter = 20000,
+  thin = 5
+)
+
+############################################################
+# 5. Convergence diagnostics
+############################################################
+
+gelman.diag(samples)
+plot(samples)
+
+############################################################
+# 6. Posterior summaries
+############################################################
+
+summary(samples)
+
+############################################################
+# End BBWM script
+############################################################
