@@ -11,10 +11,10 @@ supporting the study:
 ## Repository Contents
 
 ### Data
-- `data/delphi/Appendix_A_Anonymized_Delphi_Consensus.csv`  
+- `data/delphi/Anonymized_Delphi_Consensus.xlsx`  
   Aggregated and anonymized Delphi consensus metrics (median, IQR, Kendall’s W)
 
-- `data/bbwm/Appendix_C1_BBWM_Input_Structure.csv`  
+- `data/bbwm/BBWM_Input_Structure.xlsx`  
   Anonymized BBWM elicitation structure (Best–Worst selections and Saaty-scale comparisons)
 
 ### Scripts
