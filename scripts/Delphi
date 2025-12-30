@@ -10,7 +10,7 @@ library(irr)
 # Read anonymized Delphi dataset
 # Expected columns:
 # Challenge, Property, Round, Median, Q1, Q3, IQR
-delphi_data <- read.csv("Anonymized_Delphi_Consensus")
+
 
 ############################################################
 # 1. Verify IQR computation
