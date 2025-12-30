@@ -14,7 +14,7 @@ library(coda)
 # Expert_ID, Challenge, Best_Property, Worst_Property,
 # Comparison_Type, Reference_Property, Compared_Property, Saaty_Score
 
-bbwm_data <- read.csv("BBWM_input_structure.csv")
+
 
 ############################################################
 # 2. Prepare data for JAGS
